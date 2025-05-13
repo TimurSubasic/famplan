@@ -1,7 +1,7 @@
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/clerk-expo";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
-import { useConvex, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useSegments } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -14,8 +14,6 @@ import {
 import Dialog from "react-native-dialog";
 
 const NoFamily = () => {
-  const convex = useConvex();
-
   const { user } = useUser();
 
   const clerkId = user?.id as string;
@@ -62,6 +60,7 @@ const NoFamily = () => {
 
   const handleCodeJoin = () => {
     setFinalCode(code.toUpperCase());
+    setCodeAttempt(true);
   };
 
   useEffect(() => {
@@ -71,7 +70,6 @@ const NoFamily = () => {
         familyId: family!._id,
       });
     }
-    setCodeAttempt(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [family]);
 
