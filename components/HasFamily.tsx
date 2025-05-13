@@ -1,23 +1,13 @@
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/clerk-expo";
 import { useMutation, useQuery } from "convex/react";
+import * as Clipboard from "expo-clipboard";
 import React, { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import Dialog from "react-native-dialog";
 import { Id } from "../convex/_generated/dataModel";
 
 const HasFamily = () => {
-  const membersList = [
-    { name: "Timur", color: "#4363d8" }, //blue
-    { name: "Mirza", color: "#3cb44b" }, //green
-    { name: "Emira", color: "#fabed4" }, //pink
-    { name: "Adnan", color: "#000075" }, //navy
-    { name: "Ridvan", color: "#469990" }, //teal
-    { name: "Nadja", color: "#911eb4" }, //purple
-    { name: "Aida", color: "#e6194B" }, //red
-    { name: "Sakib", color: "#bfef45" }, //lime
-  ];
-
   const { user } = useUser();
 
   const clerkId = user?.id as string;
@@ -28,45 +18,63 @@ const HasFamily = () => {
 
   const family = useQuery(api.families.getFamilyById, { id: familyId });
 
-  const [visible, setVisible] = useState(false);
+  const [visibleAdd, setVisibleAdd] = useState(false);
 
-  const showDialog = () => {
-    setVisible(true);
+  const showDialogAdd = () => {
+    setVisibleAdd(true);
   };
 
-  const handleCancel = () => {
-    setVisible(false);
+  const handleCancelAdd = () => {
+    setVisibleAdd(false);
   };
 
+  const handleAdd = async () => {
+    await Clipboard.setStringAsync(family?.joinCode as string);
+    setVisibleAdd(false);
+  };
+
+  const [visibleLeave, setVisibleLeave] = useState(false);
+
+  const members = useQuery(api.users.getUsersByFamily, { familyId: familyId });
+
+  //leave fam dialogs
+  const showDialogLeave = () => {
+    setVisibleLeave(true);
+  };
+  const handleCancelLeave = () => {
+    setVisibleLeave(false);
+  };
   const leaveFamily = useMutation(api.users.leaveFamily);
-
   const handleLeave = () => {
     leaveFamily({
       id: userFull!._id,
     });
 
-    setVisible(false);
+    setVisibleLeave(false);
   };
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
-      <View>
-        <View className="p-5 my-5">
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ flexGrow: 1 }}
+    >
+      <View className="flex-1">
+        <View className="flex flex-col flex-1 w-full items-center justify-between p-5 my-5">
           {/* Members View Box */}
-          <View className=" border border-slate-600 rounded-lg bg-white">
+          <View className=" border border-slate-600 rounded-lg bg-white w-full">
             <Text className="text-3xl font-semibold text-center my-5">
               {family?.name}
             </Text>
 
-            <View className="flex flex-col items-center justify-center gap-5 my-3">
-              {membersList.map((users, index) => (
+            <View className="flex flex-col items-center justify-center gap-5 my-3 mb-10">
+              {members?.map((users, index) => (
                 <View
                   key={index}
                   className={` w-full flex items-start justify-start `}
                   style={{ backgroundColor: users.color }}
                 >
                   <Text className="font-semibold text-xl bg-white p-3 w-[35%] rounded-r-full">
-                    {users.name}
+                    {users.username}
                   </Text>
                 </View>
               ))}
@@ -75,14 +83,17 @@ const HasFamily = () => {
 
           {/**Buttons box */}
           <View className="w-full flex flex-col items-center justify-center gap-5 mt-10">
-            <TouchableOpacity className="w-full rounded-lg bg-slate-800 p-5">
+            <TouchableOpacity
+              onPress={showDialogAdd}
+              className="w-full rounded-lg bg-slate-800 p-5"
+            >
               <Text className="text-center text-white font-bold text-xl">
                 Add Members
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={showDialog}
+              onPress={showDialogLeave}
               className="p-5 bg-red-600 rounded-lg w-full "
             >
               <Text className="text-center text-white font-bold text-xl ">
@@ -90,14 +101,23 @@ const HasFamily = () => {
               </Text>
             </TouchableOpacity>
           </View>
-          {/** Dialog box */}
-          <Dialog.Container visible={visible}>
+          {/** Dialog box add fam */}
+          <Dialog.Container visible={visibleAdd}>
+            <Dialog.Title>{family?.joinCode}</Dialog.Title>
+            <Dialog.Description>
+              Click the copy button and send it to your family!
+            </Dialog.Description>
+            <Dialog.Button label="Cancel" onPress={handleCancelAdd} />
+            <Dialog.Button label="Copy" onPress={handleAdd} />
+          </Dialog.Container>
+          {/** Dialog box leave fam */}
+          <Dialog.Container visible={visibleLeave}>
             <Dialog.Title>Leave Family</Dialog.Title>
             <Dialog.Description>
               You are about to leave your family, are you sure you want to
               continue?
             </Dialog.Description>
-            <Dialog.Button label="Cancel" onPress={handleCancel} />
+            <Dialog.Button label="Cancel" onPress={handleCancelLeave} />
             <Dialog.Button label="Leave" onPress={handleLeave} />
           </Dialog.Container>
         </View>
