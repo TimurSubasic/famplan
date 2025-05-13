@@ -20,7 +20,7 @@ const Settings = () => {
 
   const clerkId = user?.id as string;
 
-  const userFull = useQuery(api.users.getUser, { clerkId });
+  const userFull = useQuery(api.users.getUserByClerk, { clerkId });
 
   const [username, setUsername] = useState(userFull?.username);
   const [pickedColor, setPickedColor] = useState(userFull?.color);
@@ -34,7 +34,10 @@ const Settings = () => {
   // reset color if not saved
   const segments = useSegments();
   useEffect(() => {
-    setPickedColor(userFull?.color);
+    if (pickedColor !== userFull?.color) {
+      setPickedColor(userFull?.color);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [segments]);
 
   /*

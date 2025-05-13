@@ -1,6 +1,10 @@
+import { api } from "@/convex/_generated/api";
+import { useUser } from "@clerk/clerk-expo";
+import { useMutation, useQuery } from "convex/react";
 import React, { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import Dialog from "react-native-dialog";
+import { Id } from "../convex/_generated/dataModel";
 
 const HasFamily = () => {
   const membersList = [
@@ -14,6 +18,16 @@ const HasFamily = () => {
     { name: "Sakib", color: "#bfef45" }, //lime
   ];
 
+  const { user } = useUser();
+
+  const clerkId = user?.id as string;
+
+  const userFull = useQuery(api.users.getUserByClerk, { clerkId });
+
+  const familyId = userFull?.familyId as Id<"families">;
+
+  const family = useQuery(api.families.getFamilyById, { id: familyId });
+
   const [visible, setVisible] = useState(false);
 
   const showDialog = () => {
@@ -24,18 +38,24 @@ const HasFamily = () => {
     setVisible(false);
   };
 
+  const leaveFamily = useMutation(api.users.leaveFamily);
+
   const handleLeave = () => {
+    leaveFamily({
+      id: userFull!._id,
+    });
+
     setVisible(false);
   };
 
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
       <View>
-        <View className="p-5">
+        <View className="p-5 my-5">
           {/* Members View Box */}
-          <View className="mt-5 border border-slate-600 rounded-lg bg-white">
+          <View className=" border border-slate-600 rounded-lg bg-white">
             <Text className="text-3xl font-semibold text-center my-5">
-              Family Name
+              {family?.name}
             </Text>
 
             <View className="flex flex-col items-center justify-center gap-5 my-3">

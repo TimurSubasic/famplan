@@ -10,7 +10,7 @@ const Family = () => {
 
   const clerkId = user?.id as string;
 
-  const userFull = useQuery(api.users.getUser, { clerkId });
+  const userFull = useQuery(api.users.getUserByClerk, { clerkId });
 
   const [hasFamily, setHasFamily] = useState(false);
 

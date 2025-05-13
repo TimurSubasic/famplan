@@ -32,7 +32,7 @@ export const createUser = mutation({
   },
 });
 
-export const getUser = query({
+export const getUserByClerk = query({
   args: {
     clerkId: v.string(),
   },
@@ -47,6 +47,24 @@ export const getUser = query({
     }
 
     return user;
+  },
+});
+
+export const getUsersByFamily = query({
+  args: {
+    familyId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const users = await ctx.db
+      .query("users")
+      .withIndex("byFamilyId", (q) => q.eq("familyId", args.familyId))
+      .collect();
+
+    if (!users) {
+      throw new Error("No users with this family");
+    }
+
+    return users;
   },
 });
 
@@ -82,6 +100,17 @@ export const changeFamilyId = mutation({
   handler: async (ctx, args) => {
     await ctx.db.patch(args.id, {
       familyId: args.familyId,
+    });
+  },
+});
+
+export const leaveFamily = mutation({
+  args: {
+    id: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, {
+      familyId: undefined,
     });
   },
 });

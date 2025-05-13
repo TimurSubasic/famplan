@@ -1,5 +1,9 @@
+import { api } from "@/convex/_generated/api";
+import { useUser } from "@clerk/clerk-expo";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
-import React, { useState } from "react";
+import { useConvex, useMutation, useQuery } from "convex/react";
+import { useSegments } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   ScrollView,
   Text,
@@ -10,11 +14,21 @@ import {
 import Dialog from "react-native-dialog";
 
 const NoFamily = () => {
+  const convex = useConvex();
+
+  const { user } = useUser();
+
+  const clerkId = user?.id as string;
+
+  const userFull = useQuery(api.users.getUserByClerk, { clerkId });
+
   const [code, setCode] = useState("");
 
   const [name, setName] = useState("");
 
   const [visible, setVisible] = useState(false);
+
+  const createFamily = useMutation(api.families.createFamily);
 
   const showDialog = () => {
     setVisible(true);
@@ -28,8 +42,48 @@ const NoFamily = () => {
     // The user has pressed the "Create" button, so here you can do your own logic.
     // ...Your logic
 
+    createFamily({
+      name: name,
+    });
+
     setVisible(false);
   };
+
+  const changeFamilyId = useMutation(api.users.changeFamilyId);
+
+  const [finalCode, setFinalCode] = useState<string | undefined>(undefined);
+
+  const [codeAttempt, setCodeAttempt] = useState(false);
+
+  const family = useQuery(
+    api.families.getFamilyByCode,
+    finalCode ? { joinCode: finalCode } : "skip"
+  );
+
+  const handleCodeJoin = () => {
+    setFinalCode(code.toUpperCase());
+  };
+
+  useEffect(() => {
+    if (family) {
+      changeFamilyId({
+        id: userFull!._id,
+        familyId: family!._id,
+      });
+    }
+    setCodeAttempt(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [family]);
+
+  const segments = useSegments();
+
+  useEffect(() => {
+    if (codeAttempt) {
+      setCodeAttempt(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [segments]);
+
   return (
     <ScrollView
       keyboardShouldPersistTaps="handled"
@@ -49,8 +103,7 @@ const NoFamily = () => {
                 defaultValue={code}
               />
               <TouchableOpacity
-                onPress={() => {}}
-                // onPress={handleCodeJoin}
+                onPress={handleCodeJoin}
                 className="flex-1 rounded-lg bg-slate-800 p-5"
               >
                 <Text className="text-white font-bold text-xl text-center">
@@ -58,6 +111,13 @@ const NoFamily = () => {
                 </Text>
               </TouchableOpacity>
             </View>
+            {codeAttempt ? (
+              <Text className="text-red-500 font-semibold text-md">
+                No family found
+              </Text>
+            ) : (
+              <View />
+            )}
           </View>
 
           <View className="flex w-full items-center justify-center my-10">
