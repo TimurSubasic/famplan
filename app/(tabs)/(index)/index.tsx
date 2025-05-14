@@ -3,7 +3,7 @@ import { useUser } from "@clerk/clerk-expo";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useMutation, useQuery } from "convex/react";
-import { router } from "expo-router";
+import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import Dialog from "react-native-dialog";
@@ -60,6 +60,8 @@ const Index = () => {
     }
   }, [userFull]);
 
+  const router = useRouter();
+
   if (hasFamily) {
     return (
       <ScrollView
@@ -80,7 +82,12 @@ const Index = () => {
                 homes!.map((home, index) => (
                   <TouchableOpacity
                     key={index}
-                    onPress={() => {}}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/(tabs)/(index)/[id]",
+                        params: { id: home._id },
+                      })
+                    }
                     className="p-4 rounded-lg bg-white shadow-lg w-full flex flex-row items-center justify-between border border-slate-600"
                   >
                     <Text className="text-xl font-semibold">{home.name}</Text>

@@ -50,3 +50,17 @@ export const getHomesByFamilyId = query({
     return homes;
   },
 });
+
+export const getHomesById = query({
+  args: {
+    id: v.id("homes"),
+  },
+  handler: async (ctx, args) => {
+    const home = await ctx.db
+      .query("homes")
+      .withIndex("by_id", (q) => q.eq("_id", args.id))
+      .unique();
+
+    return home;
+  },
+});
