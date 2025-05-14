@@ -1,11 +1,13 @@
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { useUser } from "@clerk/clerk-expo";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Calendar, DateData } from "react-native-calendars";
+import Dialog from "react-native-dialog";
 
 interface MarkedDates {
   [date: string]: {
@@ -17,20 +19,26 @@ interface MarkedDates {
 }
 
 export default function HomesScreen() {
+  //get home info
   const { id } = useLocalSearchParams();
-
   const homeId = id as Id<"homes">;
-
   const home = useQuery(api.homes.getHomesById, { id: homeId });
+
+  //get user
+  const { user } = useUser();
+  const clerkId = user?.id as string;
+  const userFull = useQuery(api.users.getUserByClerk, { clerkId });
 
   const router = useRouter();
 
+  //date consts states
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [markedDates, setMarkedDates] = useState<MarkedDates>({});
 
   const today = new Date().toString();
 
+  //calendar functions
   const handleDayPress = (day: DateData) => {
     if (!startDate || (startDate && endDate)) {
       // Start new selection
@@ -69,44 +77,48 @@ export default function HomesScreen() {
     }
   };
 
-  const handleSave = () => {
-    Alert.alert(`Start date: ${startDate} ; End date: ${endDate}`);
+  const currentBooking = useQuery(api.bookings.getBookingsByHomeAndUser, {
+    homeId: homeId,
+    userId: userFull?._id as string,
+  });
+
+  // dialog stuff
+  const [visible, setVisible] = useState(false);
+
+  const handleCancel = () => {
+    setVisible(false);
   };
 
-  let bookings: any = null;
+  const deleteBooking = useMutation(api.bookings.deleteBooking);
 
-  //  bookings = [
-  //   {
-  //     name: "Timur",
-  //     color: "#4363d8",
-  //     fromDate: "2025-05-06",
-  //     toDate: "2025-05-08",
-  //   },
-  //   {
-  //     name: "Mirza",
-  //     color: "#3cb44b",
-  //     fromDate: "2025-05-11",
-  //     toDate: "2025-05-13",
-  //   },
-  //   {
-  //     name: "Emira",
-  //     color: "#fabed4",
-  //     fromDate: "2025-05-16",
-  //     toDate: "2025-05-18",
-  //   },
-  //   {
-  //     name: "Adnan",
-  //     color: "#000075",
-  //     fromDate: "2025-05-22",
-  //     toDate: "2025-05-29",
-  //   },
-  //   {
-  //     name: "Ridvan",
-  //     color: "#469990",
-  //     fromDate: "2025-05-01",
-  //     toDate: "2025-05-04",
-  //   },
-  // ];
+  const handleDelete = async () => {
+    await deleteBooking({
+      id: currentBooking!._id,
+    });
+
+    setVisible(false);
+  };
+
+  const createBooking = useMutation(api.bookings.createBooking);
+
+  const handleSave = async () => {
+    if (startDate && endDate) {
+      const booking = await createBooking({
+        fromDate: startDate,
+        toDate: endDate,
+        homeId: home!._id,
+        userId: userFull!._id,
+      });
+
+      if (!booking.success) {
+        setVisible(true);
+      }
+    }
+  };
+
+  const bookingsAndUsers = useQuery(api.bookings.getBookingsWithUserInfo, {
+    homeId: homeId,
+  });
 
   return (
     <ScrollView
@@ -139,7 +151,6 @@ export default function HomesScreen() {
             onDayPress={handleDayPress}
             markedDates={markedDates}
             markingType="period"
-            enableSwipeMonths={true}
             minDate={today}
             theme={{
               todayTextColor: "#000",
@@ -167,29 +178,30 @@ export default function HomesScreen() {
           </Text>
 
           <View className="flex flex-col items-center justify-center gap-5 my-3">
-            {bookings ? (
-              bookings.map((users: any, index: number) => (
-                <View
-                  key={index}
-                  className={` w-full flex flex-row items-center justify-between p-5 `}
-                >
-                  <Text className="font-semibold text-xl bg-white w-[35%] rounded-r-3xl">
-                    {users.name}
-                  </Text>
+            {bookingsAndUsers?.length !== 0 ? (
+              bookingsAndUsers?.map((data, index) => (
+                <View key={index}>
+                  <View
+                    className={` w-full flex flex-row items-center justify-between p-5 `}
+                  >
+                    <Text className="font-semibold text-xl bg-white w-[35%] rounded-r-3xl">
+                      {data.name}
+                    </Text>
 
-                  <View className="felx flex-row items-center justify-center gap-5">
-                    <Text className="font-medium text-lg">
-                      {users.fromDate.split("-").slice(1).join("-")}
-                    </Text>
-                    <FontAwesome
-                      size={30}
-                      name="arrow-circle-right"
-                      color={users.color}
-                      className="shadow-xl"
-                    />
-                    <Text className="font-medium text-lg">
-                      {users.toDate.split("-").slice(1).join("-")}
-                    </Text>
+                    <View className="felx flex-row items-center justify-center gap-5">
+                      <Text className="font-medium text-lg">
+                        {data.fromDate.split("-").slice(1).join("-")}
+                      </Text>
+                      <FontAwesome
+                        size={30}
+                        name="arrow-circle-right"
+                        color={data.color}
+                        className="shadow-xl"
+                      />
+                      <Text className="font-medium text-lg">
+                        {data.toDate.split("-").slice(1).join("-")}
+                      </Text>
+                    </View>
                   </View>
                 </View>
               ))
@@ -202,7 +214,29 @@ export default function HomesScreen() {
             )}
           </View>
         </View>
+
+        {currentBooking ? (
+          <TouchableOpacity className="p-5 bg-red-600 rounded-lg w-full mb-5 mt-10">
+            <Text className="text-center text-white font-bold text-xl ">
+              Delete My Booking
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <></>
+        )}
       </View>
+
+      {/** Dialog box */}
+      <Dialog.Container visible={visible}>
+        <Dialog.Title>You have a Booking</Dialog.Title>
+        <Dialog.Description>
+          {" "}
+          To create a new booking you must delete the current booking for this
+          house!{" "}
+        </Dialog.Description>
+        <Dialog.Button label="Cancel" onPress={handleCancel} />
+        <Dialog.Button label="Delete" onPress={handleDelete} />
+      </Dialog.Container>
     </ScrollView>
   );
 }
