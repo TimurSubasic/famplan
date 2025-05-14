@@ -60,8 +60,8 @@ export const getUsersByFamily = query({
       .withIndex("byFamilyId", (q) => q.eq("familyId", args.familyId))
       .collect();
 
-    if (!users) {
-      throw new Error("No users with this family");
+    if (users.length === 0) {
+      return null;
     }
 
     return users;

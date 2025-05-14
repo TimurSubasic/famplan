@@ -20,7 +20,9 @@ export default defineSchema({
   homes: defineTable({
     name: v.string(),
     familyId: v.string(),
-  }).index("byFamilyId", ["familyId"]),
+  })
+    .index("byFamilyId", ["familyId"])
+    .index("byFamilyIdAndName", ["familyId", "name"]),
 
   bookings: defineTable({
     fromDate: v.string(),
