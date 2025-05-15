@@ -55,22 +55,23 @@ const Settings = () => {
 
   // show and hide alerts
   // delete and log out alerts
-  const [deleteVisible, setDeleteVisible] = useState(false);
-  const [logOutVisible, setLogOutVisible] = useState(false);
+  // const [deleteVisible, setDeleteVisible] = useState(false);
+  //
 
-  // show and hide delete
-  const showDelete = () => {
-    setDeleteVisible(true);
-  };
-  const handleDeleteCancel = () => {
-    setDeleteVisible(false);
-  };
-  // handle deletes on confirmation
-  const handleDelete = () => {
-    setDeleteVisible(false);
-  };
+  // // show and hide delete
+  // const showDelete = () => {
+  //   setDeleteVisible(true);
+  // };
+  // const handleDeleteCancel = () => {
+  //   setDeleteVisible(false);
+  // };
+  // // handle deletes on confirmation
+  // const handleDelete = () => {
+  //   setDeleteVisible(false);
+  // };
 
   // show and hide log out
+  const [logOutVisible, setLogOutVisible] = useState(false);
   const showLogOut = () => {
     setLogOutVisible(true);
   };
@@ -239,7 +240,7 @@ const Settings = () => {
           </View>
         </View>
 
-        {/** Delete dialog box */}
+        {/** Delete dialog box 
         <Dialog.Container visible={deleteVisible}>
           <Dialog.Title>Delete Account</Dialog.Title>
           <Dialog.Description>
@@ -249,6 +250,7 @@ const Settings = () => {
           <Dialog.Button label="Cancel" onPress={handleDeleteCancel} />
           <Dialog.Button label="Delete" onPress={handleDelete} />
         </Dialog.Container>
+        */}
 
         {/** Log Out dialog box */}
         <Dialog.Container visible={logOutVisible}>
