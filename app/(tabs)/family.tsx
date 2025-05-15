@@ -1,4 +1,5 @@
 import HasFamily from "@/components/HasFamily";
+import Loading from "@/components/Loading";
 import NoFamily from "@/components/NoFamily";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/clerk-expo";
@@ -15,12 +16,16 @@ const Family = () => {
   const [hasFamily, setHasFamily] = useState(false);
 
   useEffect(() => {
-    if (!userFull?.familyId) {
-      setHasFamily(false);
-    } else {
+    if (userFull?.familyId) {
       setHasFamily(true);
+    } else {
+      setHasFamily(false);
     }
   }, [userFull]);
+
+  if (userFull === undefined) {
+    return <Loading />;
+  }
 
   if (hasFamily) {
     return <HasFamily />;

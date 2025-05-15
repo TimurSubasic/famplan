@@ -1,3 +1,4 @@
+import Loading from "@/components/Loading";
 import { api } from "@/convex/_generated/api";
 import { useUser } from "@clerk/clerk-expo";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
@@ -26,41 +27,85 @@ const Index = () => {
       : "skip"
   );
 
-  // dialog stuff
-  const [visible, setVisible] = useState(false);
-  const [name, setName] = useState("");
-  const [title, setTitle] = useState("Create Home");
-  const [body, setBody] = useState("Choose your home name");
+  // dialog create stuff
+  const [visibleCreate, setVisibleCreate] = useState(false);
+  const [nameCreate, setNameCreate] = useState("");
+  const [titleCreate, setTitleCreate] = useState("Create Home");
+  const [bodyCreate, setBodyCreate] = useState("Choose your home name");
 
-  const handleCancel = () => {
-    setVisible(false);
+  const handleCancelCreate = () => {
+    setVisibleCreate(false);
+    setTitleCreate("Create Home");
+    setBodyCreate("Choose your home name");
+    setNameCreate("");
   };
 
   const createHome = useMutation(api.homes.createHome);
 
   const handleCreate = async () => {
-    const home = await createHome({
-      name: name,
-      familyId: userFull!.familyId!,
-    });
+    if (nameCreate.length >= 2) {
+      const home = await createHome({
+        name: nameCreate,
+        familyId: userFull!.familyId!,
+      });
 
-    if (home.success) {
-      setVisible(false);
-    } else {
-      setTitle("Home With That Name Exists");
-      setBody("Please choose a diferent home name");
+      if (home.success) {
+        setVisibleCreate(false);
+        setNameCreate("");
+      } else {
+        setTitleCreate("Home With That Name Exists");
+        setBodyCreate("Please choose a diferent home name");
+      }
+    }
+  };
+
+  //dialog delete stuff
+  const [visibleDelete, setVisibleDelete] = useState(false);
+  const [nameDelete, setNameDelete] = useState("");
+  const [titleDelete, setTitleDelete] = useState("Delete a Home");
+  const [bodyDelete, setBodyDelete] = useState(
+    "Type the name of the home you want to delete"
+  );
+
+  const handleCancelDelete = () => {
+    setVisibleDelete(false);
+    setTitleDelete("Delete a Home");
+    setBodyDelete("Type the name of the home you want to delete");
+    setNameDelete("");
+  };
+
+  const deleteHome = useMutation(api.homes.deleteHome);
+
+  const handleDelete = async () => {
+    if (nameDelete.length >= 2) {
+      const home = await deleteHome({
+        name: nameDelete,
+        familyId: userFull!.familyId!,
+      });
+
+      if (home.success) {
+        setVisibleDelete(false);
+        setNameDelete("");
+      } else {
+        setTitleDelete(home.message);
+        setBodyDelete(`Home with name '${nameDelete}' doesn't exist `);
+      }
     }
   };
 
   useEffect(() => {
-    if (!userFull?.familyId) {
-      setHasFamily(false);
-    } else {
+    if (userFull?.familyId) {
       setHasFamily(true);
+    } else {
+      setHasFamily(false);
     }
   }, [userFull]);
 
   const router = useRouter();
+
+  if (userFull === undefined) {
+    return <Loading />;
+  }
 
   if (hasFamily) {
     return (
@@ -78,8 +123,10 @@ const Index = () => {
             <View className="flex flex-col gap-5 w-full items-center justify-center">
               {/* homes.map should be here */}
 
-              {homes ? (
-                homes!.map((home, index) => (
+              {homes === undefined ? (
+                <Loading />
+              ) : homes ? (
+                homes.map((home, index) => (
                   <TouchableOpacity
                     key={index}
                     onPress={() =>
@@ -112,23 +159,45 @@ const Index = () => {
           {/* buttons */}
           <View className="flex flex-col w-full items-center justify-center gap-5">
             <TouchableOpacity
-              onPress={() => setVisible(true)}
+              onPress={() => setVisibleCreate(true)}
               className="w-full rounded-lg bg-slate-800 p-5"
             >
               <Text className="text-white font-bold text-xl text-center">
                 Create new Home
               </Text>
             </TouchableOpacity>
+
+            {homes ? (
+              <TouchableOpacity
+                onPress={() => setVisibleDelete(true)}
+                className="w-full rounded-lg bg-red-600 p-5"
+              >
+                <Text className="text-white font-bold text-xl text-center">
+                  Delete a Home
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <></>
+            )}
           </View>
         </View>
 
-        {/** Dialog box */}
-        <Dialog.Container visible={visible}>
-          <Dialog.Title>{title}</Dialog.Title>
-          <Dialog.Description> {body} </Dialog.Description>
-          <Dialog.Input onChangeText={setName} />
-          <Dialog.Button label="Cancel" onPress={handleCancel} />
+        {/** Dialog box create */}
+        <Dialog.Container visible={visibleCreate}>
+          <Dialog.Title>{titleCreate}</Dialog.Title>
+          <Dialog.Description> {bodyCreate} </Dialog.Description>
+          <Dialog.Input onChangeText={setNameCreate} />
+          <Dialog.Button label="Cancel" onPress={handleCancelCreate} />
           <Dialog.Button label="Create" onPress={handleCreate} />
+        </Dialog.Container>
+
+        {/** Dialog box delete */}
+        <Dialog.Container visible={visibleDelete}>
+          <Dialog.Title>{titleDelete}</Dialog.Title>
+          <Dialog.Description> {bodyDelete} </Dialog.Description>
+          <Dialog.Input onChangeText={setNameDelete} />
+          <Dialog.Button label="Cancel" onPress={handleCancelDelete} />
+          <Dialog.Button label="Delete" onPress={handleDelete} />
         </Dialog.Container>
       </ScrollView>
     );
@@ -142,7 +211,6 @@ const Index = () => {
             You must be in a family to create a home
           </Text>
           <FontAwesome size={260} name="home" color={"#1e293b"} />
-
           <TouchableOpacity
             className=" rounded-lg bg-slate-800 p-5 -mt-10 w-48"
             onPress={() => router.replace("/(tabs)/family")}

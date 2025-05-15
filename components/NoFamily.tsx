@@ -60,7 +60,9 @@ const NoFamily = () => {
 
   const handleCodeJoin = () => {
     setFinalCode(code.toUpperCase());
-    setCodeAttempt(true);
+    if (family !== undefined) {
+      setCodeAttempt(true);
+    }
   };
 
   useEffect(() => {

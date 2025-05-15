@@ -91,10 +91,8 @@ export default function HomesScreen() {
 
   const deleteBooking = useMutation(api.bookings.deleteBooking);
 
-  const handleDelete = async () => {
-    await deleteBooking({
-      id: currentBooking!._id,
-    });
+  const handleDelete = () => {
+    handleBookingDelete();
 
     setVisible(false);
   };
@@ -119,6 +117,12 @@ export default function HomesScreen() {
   const bookingsAndUsers = useQuery(api.bookings.getBookingsWithUserInfo, {
     homeId: homeId,
   });
+
+  const handleBookingDelete = async () => {
+    await deleteBooking({
+      id: currentBooking!._id,
+    });
+  };
 
   return (
     <ScrollView
@@ -196,7 +200,7 @@ export default function HomesScreen() {
                         size={30}
                         name="arrow-circle-right"
                         color={data.color}
-                        className="shadow-xl"
+                        className="shadow"
                       />
                       <Text className="font-medium text-lg">
                         {data.toDate.split("-").slice(1).join("-")}
@@ -216,7 +220,10 @@ export default function HomesScreen() {
         </View>
 
         {currentBooking ? (
-          <TouchableOpacity className="p-5 bg-red-600 rounded-lg w-full mb-5 mt-10">
+          <TouchableOpacity
+            onPress={() => handleBookingDelete()}
+            className="p-5 bg-red-600 rounded-lg w-full mb-5 mt-10"
+          >
             <Text className="text-center text-white font-bold text-xl ">
               Delete My Booking
             </Text>

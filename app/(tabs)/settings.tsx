@@ -216,6 +216,9 @@ const Settings = () => {
             <View className=" w-full bg-red-600 h-1.5 rounded-t-lg" />
             <View className=" w-full bg-slate-800 h-1" />
             <View className=" w-full bg-red-600 h-1.5 rounded-b-lg" />
+
+            {/* Delete account needs webhooks to delete in clerk aswell
+
             <TouchableOpacity
               onPress={showDelete}
               className="p-5 bg-red-600 rounded-lg w-full mt-5"
@@ -223,7 +226,8 @@ const Settings = () => {
               <Text className="text-center text-white font-bold text-xl ">
                 Delete Account
               </Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
+
             <TouchableOpacity
               onPress={showLogOut}
               className="p-5 bg-red-600 rounded-lg w-full mt-5"

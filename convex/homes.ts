@@ -64,3 +64,32 @@ export const getHomesById = query({
     return home;
   },
 });
+
+export const deleteHome = mutation({
+  args: {
+    name: v.string(),
+    familyId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const home = await ctx.db
+      .query("homes")
+      .withIndex("byFamilyIdAndName", (q) =>
+        q.eq("familyId", args.familyId).eq("name", args.name)
+      )
+      .first();
+
+    if (!home) {
+      return {
+        success: false,
+        message: "Please input the correct home name",
+      };
+    }
+
+    await ctx.db.delete(home._id);
+
+    return {
+      success: true,
+      message: "Home deleted",
+    };
+  },
+});
