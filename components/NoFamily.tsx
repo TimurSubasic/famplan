@@ -68,7 +68,7 @@ const NoFamily = () => {
   useEffect(() => {
     if (family) {
       changeFamilyId({
-        id: userFull!._id,
+        userId: userFull!._id,
         familyId: family!._id,
       });
     }

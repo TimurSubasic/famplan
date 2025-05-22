@@ -168,3 +168,25 @@ export const leaveFamily = mutation({
     }
   },
 });
+
+export const changeFamilyId = mutation({
+  args: {
+    userId: v.id("users"),
+    familyId: v.id("families"),
+  },
+  handler: async (ctx, args) => {
+    const { userId, familyId } = args;
+    const user = await ctx.db.get(userId);
+
+    if (!user) {
+      return {
+        success: false,
+        message: "No user found",
+      };
+    }
+
+    await ctx.db.patch(user._id, {
+      familyId: familyId,
+    });
+  },
+});
