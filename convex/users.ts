@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
 // Create a new task with the given text
@@ -43,7 +44,7 @@ export const getUserByClerk = query({
       .unique();
 
     if (!user) {
-      throw new Error("User not found");
+      return user;
     }
 
     return user;
@@ -92,25 +93,78 @@ export const changeColor = mutation({
   },
 });
 
-export const changeFamilyId = mutation({
-  args: {
-    id: v.id("users"),
-    familyId: v.string(),
-  },
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.id, {
-      familyId: args.familyId,
-    });
-  },
-});
-
 export const leaveFamily = mutation({
   args: {
     id: v.id("users"),
   },
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.id, {
-      familyId: undefined,
-    });
+    // Get the user document
+    const user = await ctx.db.get(args.id);
+    if (!user || !user.familyId) {
+      return {
+        success: false,
+        message: "User not found or not in a family",
+      };
+    }
+    const familyId = user.familyId;
+
+    // Check if there are any other users in the same family
+    const otherUsers = await ctx.db
+      .query("users")
+      .withIndex("byFamilyId", (q) => q.eq("familyId", familyId))
+      .collect();
+
+    // Remove the current user from the list
+    const remainingUsers = otherUsers.filter((u) => u._id !== args.id);
+
+    if (remainingUsers.length === 0) {
+      // This is the last user in the family
+
+      // Delete the family
+      const family = await ctx.db
+        .query("families")
+        .withIndex("by_id", (q) => q.eq("_id", user.familyId as Id<"families">))
+        .unique();
+      if (family) {
+        await ctx.db.delete(family._id);
+      }
+
+      // Delete all homes tied to this family
+      const homes = await ctx.db
+        .query("homes")
+        .withIndex("byFamilyId", (q) => q.eq("familyId", familyId))
+        .collect();
+      for (const home of homes) {
+        const bookings = await ctx.db
+          .query("bookings")
+          .withIndex("byHomeId", (q) => q.eq("homeId", home._id))
+          .collect();
+
+        for (const booking of bookings) {
+          await ctx.db.delete(booking._id);
+        }
+
+        await ctx.db.delete(home._id);
+      }
+
+      // Optionally, you could also delete bookings for these homes if needed
+
+      // Remove the familyId from the user
+      await ctx.db.patch(args.id, { familyId: undefined });
+    } else {
+      // Not the last user, just remove familyId and their bookings
+
+      // Remove the familyId from the user
+      await ctx.db.patch(args.id, { familyId: undefined });
+
+      // Remove all bookings for this user
+      const bookings = await ctx.db
+        .query("bookings")
+        .withIndex("byUserId", (q) => q.eq("userId", args.id))
+        .collect();
+      for (const booking of bookings) {
+        await ctx.db.delete(booking._id);
+      }
+    }
   },
 });

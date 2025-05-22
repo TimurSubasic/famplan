@@ -117,3 +117,55 @@ export const getBookingsWithUserInfo = query({
     return bookingsWithUserInfo;
   },
 });
+
+export const getMarkedDatesForHome = query({
+  args: {
+    homeId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Get all bookings for this home
+    const bookings = await ctx.db
+      .query("bookings")
+      .withIndex("byHomeId", (q) => q.eq("homeId", args.homeId))
+      .collect();
+
+    // Create an object to store all marked dates
+    const markedDates: {
+      [date: string]: {
+        color: string;
+        selected: boolean;
+        startingDay: boolean;
+        endingDay: boolean;
+      };
+    } = {};
+
+    // For each booking, generate marked dates
+    for (const booking of bookings) {
+      // Get the user's color
+      const user = await ctx.db
+        .query("users")
+        .withIndex("by_id", (q) => q.eq("_id", booking.userId as Id<"users">))
+        .first();
+
+      if (!user) continue;
+
+      // Generate dates between fromDate and toDate
+      const startDate = new Date(booking.fromDate);
+      const endDate = new Date(booking.toDate);
+      let currentDate = new Date(startDate);
+
+      while (currentDate <= endDate) {
+        const dateString = currentDate.toISOString().split("T")[0];
+        markedDates[dateString] = {
+          color: user.color,
+          selected: true,
+          startingDay: dateString === booking.fromDate,
+          endingDay: dateString === booking.toDate,
+        };
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    }
+
+    return markedDates;
+  },
+});

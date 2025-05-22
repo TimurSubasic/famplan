@@ -4,7 +4,7 @@ import { useUser } from "@clerk/clerk-expo";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useMutation, useQuery } from "convex/react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Calendar, DateData } from "react-native-calendars";
 import Dialog from "react-native-dialog";
@@ -35,11 +35,26 @@ export default function HomesScreen() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [markedDates, setMarkedDates] = useState<MarkedDates>({});
+  const [localMarkedDates, setLocalMarkedDates] = useState<MarkedDates>({});
+
+  const markedDatesDB = useQuery(api.bookings.getMarkedDatesForHome, {
+    homeId: homeId,
+  });
+
+  useEffect(() => {
+    setLocalMarkedDates({ ...markedDatesDB, ...markedDates });
+  }, [markedDatesDB, markedDates]);
 
   const today = new Date().toString();
 
   //calendar functions
   const handleDayPress = (day: DateData) => {
+    // Check if the pressed day is already marked in the database
+    if (markedDatesDB && markedDatesDB[day.dateString]) {
+      // Day is already booked, do nothing
+      return;
+    }
+
     if (!startDate || (startDate && endDate)) {
       // Start new selection
       setStartDate(day.dateString);
@@ -49,26 +64,58 @@ export default function HomesScreen() {
           selected: true,
           startingDay: true,
           endingDay: true,
-          color: "#000",
+          color: userFull?.color as string,
         },
       });
     } else {
+      // Check if the new end date is before the start date
+      const newEndDate = new Date(day.dateString);
+      const currentStartDate = new Date(startDate);
+
+      if (newEndDate < currentStartDate) {
+        // Reset selection if end date is before start date
+        setStartDate("");
+        setEndDate("");
+        setMarkedDates({});
+        return;
+      }
+
+      // Check for overlaps with existing bookings
+      let hasOverlap = false;
+      let currentDate = new Date(startDate);
+      const lastDate = new Date(day.dateString);
+
+      while (currentDate <= lastDate) {
+        const dateString = currentDate.toISOString().split("T")[0];
+        if (markedDatesDB && markedDatesDB[dateString]) {
+          hasOverlap = true;
+          break;
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      if (hasOverlap) {
+        // Reset selection if there's an overlap
+        setStartDate("");
+        setEndDate("");
+        setMarkedDates({});
+        return;
+      }
+
       // Complete the selection
-      const newEndDate = day.dateString;
-      setEndDate(newEndDate);
+      setEndDate(day.dateString);
 
       // Create marked dates object for the range
       const dates: MarkedDates = {};
-      let currentDate = new Date(startDate);
-      const lastDate = new Date(newEndDate);
+      currentDate = new Date(startDate);
 
       while (currentDate <= lastDate) {
         const dateString = currentDate.toISOString().split("T")[0];
         dates[dateString] = {
           selected: true,
-          color: "#000",
+          color: userFull?.color as string,
           startingDay: dateString === startDate,
-          endingDay: dateString === newEndDate,
+          endingDay: dateString === day.dateString,
         };
         currentDate.setDate(currentDate.getDate() + 1);
       }
@@ -100,12 +147,21 @@ export default function HomesScreen() {
   const createBooking = useMutation(api.bookings.createBooking);
 
   const handleSave = async () => {
-    if (startDate && endDate) {
+    if (startDate) {
       const booking = await createBooking({
         fromDate: startDate,
-        toDate: endDate,
+        toDate: endDate || startDate, // If no endDate, use startDate
         homeId: home!._id,
         userId: userFull!._id,
+      });
+
+      setMarkedDates({
+        [""]: {
+          selected: false,
+          startingDay: false,
+          endingDay: false,
+          color: "#fff",
+        },
       });
 
       if (!booking.success) {
@@ -121,6 +177,14 @@ export default function HomesScreen() {
   const handleBookingDelete = async () => {
     await deleteBooking({
       id: currentBooking!._id,
+    });
+    setMarkedDates({
+      [""]: {
+        selected: false,
+        startingDay: false,
+        endingDay: false,
+        color: "#fff",
+      },
     });
   };
 
@@ -153,9 +217,10 @@ export default function HomesScreen() {
               backgroundColor: "transparent",
             }}
             onDayPress={handleDayPress}
-            markedDates={markedDates}
+            markedDates={localMarkedDates}
             markingType="period"
             minDate={today}
+            allowSelectionOutOfRange={false}
             theme={{
               todayTextColor: "#000",
               selectedDayBackgroundColor: "#000",
@@ -229,7 +294,7 @@ export default function HomesScreen() {
             </Text>
           </TouchableOpacity>
         ) : (
-          <></>
+          <View />
         )}
       </View>
 

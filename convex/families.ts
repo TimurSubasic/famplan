@@ -19,7 +19,10 @@ export const createFamily = mutation({
     // Correct approach
     const identity = await ctx.auth.getUserIdentity();
     if (identity === null) {
-      throw new Error("Not authenticated");
+      return {
+        success: false,
+        message: "Not authenticated",
+      };
     }
     const subject = identity.subject; // Now works correctly
     const user = await ctx.db
@@ -28,7 +31,10 @@ export const createFamily = mutation({
       .unique();
 
     if (!user) {
-      throw new Error("User not found");
+      return {
+        success: false,
+        message: "No user",
+      };
     }
 
     // Try max 10 times to find a unique code
@@ -46,7 +52,10 @@ export const createFamily = mutation({
     }
 
     if (!joinCode) {
-      throw new Error("Failed to generate family");
+      return {
+        success: false,
+        message: "Join code failed to generate",
+      };
     }
 
     //generate family
@@ -89,7 +98,7 @@ export const getFamilyById = query({
     const family = await ctx.db.get(args.id);
 
     if (!family) {
-      throw new Error("No family found");
+      return family;
     }
 
     return family;

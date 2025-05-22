@@ -85,6 +85,15 @@ export const deleteHome = mutation({
       };
     }
 
+    const bookings = await ctx.db
+      .query("bookings")
+      .withIndex("byHomeId", (q) => q.eq("homeId", home._id))
+      .collect();
+
+    for (const booking of bookings) {
+      await ctx.db.delete(booking._id);
+    }
+
     await ctx.db.delete(home._id);
 
     return {
