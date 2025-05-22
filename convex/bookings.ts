@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 
 export const createBooking = mutation({
   args: {
@@ -167,5 +167,22 @@ export const getMarkedDatesForHome = query({
     }
 
     return markedDates;
+  },
+});
+
+export const deleteOldBookings = internalMutation({
+  handler: async (ctx) => {
+    // Get today's date in YYYY-MM-DD format (UTC)
+    const today = new Date().toISOString().slice(0, 10);
+
+    // Find bookings where toDate < today
+    const oldBookings = await ctx.db
+      .query("bookings")
+      .filter((q) => q.lt(q.field("toDate"), today))
+      .collect();
+
+    for (const booking of oldBookings) {
+      await ctx.db.delete(booking._id);
+    }
   },
 });
