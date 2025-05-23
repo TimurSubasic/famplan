@@ -32,5 +32,7 @@ export default defineSchema({
   })
     .index("byHomeAndUser", ["homeId", "userId"])
     .index("byUserId", ["userId"])
-    .index("byHomeId", ["homeId"]),
+    .index("byHomeId", ["homeId"])
+    .index("byHomeId_fromDate", ["homeId", "fromDate"])
+    .index("byToDate", ["toDate"]),
 });

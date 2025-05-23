@@ -6,6 +6,7 @@ import React, { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import Dialog from "react-native-dialog";
 import { Id } from "../convex/_generated/dataModel";
+import Loading from "./Loading";
 
 const HasFamily = () => {
   const { user } = useUser();
@@ -52,6 +53,10 @@ const HasFamily = () => {
 
     setVisibleLeave(false);
   };
+
+  if (family === undefined) {
+    return <Loading />;
+  }
 
   return (
     <ScrollView

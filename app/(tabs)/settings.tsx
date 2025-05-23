@@ -1,3 +1,4 @@
+import Loading from "@/components/Loading";
 import { api } from "@/convex/_generated/api";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useMutation, useQuery } from "convex/react";
@@ -40,36 +41,6 @@ const Settings = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [segments]);
 
-  /*
-
-  Toggles for notifications need to add to database
-
-  // toggle switches
-  const [booking, setBooking] = useState(true);
-  const [members, setMembers] = useState(true);
-
-  // toggle switches functions
-  const toggleBooking = () => setBooking((previousState) => !previousState);
-  const toggleMembers = () => setMembers((previousState) => !previousState);
-*/
-
-  // show and hide alerts
-  // delete and log out alerts
-  // const [deleteVisible, setDeleteVisible] = useState(false);
-  //
-
-  // // show and hide delete
-  // const showDelete = () => {
-  //   setDeleteVisible(true);
-  // };
-  // const handleDeleteCancel = () => {
-  //   setDeleteVisible(false);
-  // };
-  // // handle deletes on confirmation
-  // const handleDelete = () => {
-  //   setDeleteVisible(false);
-  // };
-
   // show and hide log out
   const [logOutVisible, setLogOutVisible] = useState(false);
   const showLogOut = () => {
@@ -109,6 +80,10 @@ const Settings = () => {
       });
     }
   };
+
+  if (userFull === undefined) {
+    return <Loading />;
+  }
 
   return (
     <ScrollView
@@ -175,41 +150,6 @@ const Settings = () => {
                 </Text>
               </TouchableOpacity>
             </View>
-
-            {/*
-            Notifications box 
-
-            <View className="felx flex-col items-start justify-center gap-3 w-full">
-              <Text className="text-xl font-semibold">Notifications: </Text>
-
-              <View className="flex flex-row w-full items-center justify-between">
-                <Text className="text-lg font-semibold">New Bookings</Text>
-
-                <Switch
-                  trackColor={{ false: "#6b7280", true: "#2563eb" }}
-                  thumbColor={booking ? "#1e293b" : "#d1d5db"}
-                  ios_backgroundColor="#6b7280"
-                  onValueChange={toggleBooking}
-                  value={booking}
-                />
-              </View>
-              <View className="w-full h-1 bg-slate-600 rounded-lg" />
-
-              <View className="flex flex-row w-full items-center justify-between">
-                <Text className="text-lg font-semibold">New Members</Text>
-
-                <Switch
-                  trackColor={{ false: "#6b7280", true: "#2563eb" }}
-                  thumbColor={members ? "#1e293b" : "#d1d5db"}
-                  ios_backgroundColor="#6b7280"
-                  onValueChange={toggleMembers}
-                  value={members}
-                />
-              </View>
-            </View>
-          
-          Not in database yet
-          */}
           </View>
 
           {/**Danger zone */}
@@ -217,17 +157,6 @@ const Settings = () => {
             <View className=" w-full bg-red-600 h-1.5 rounded-t-lg" />
             <View className=" w-full bg-slate-800 h-1" />
             <View className=" w-full bg-red-600 h-1.5 rounded-b-lg" />
-
-            {/* Delete account needs webhooks to delete in clerk aswell
-
-            <TouchableOpacity
-              onPress={showDelete}
-              className="p-5 bg-red-600 rounded-lg w-full mt-5"
-            >
-              <Text className="text-center text-white font-bold text-xl ">
-                Delete Account
-              </Text>
-            </TouchableOpacity> */}
 
             <TouchableOpacity
               onPress={showLogOut}
@@ -239,18 +168,6 @@ const Settings = () => {
             </TouchableOpacity>
           </View>
         </View>
-
-        {/** Delete dialog box 
-        <Dialog.Container visible={deleteVisible}>
-          <Dialog.Title>Delete Account</Dialog.Title>
-          <Dialog.Description>
-            This action removes all of your data, are you sure you want to
-            continue?
-          </Dialog.Description>
-          <Dialog.Button label="Cancel" onPress={handleDeleteCancel} />
-          <Dialog.Button label="Delete" onPress={handleDelete} />
-        </Dialog.Container>
-        */}
 
         {/** Log Out dialog box */}
         <Dialog.Container visible={logOutVisible}>

@@ -91,13 +91,33 @@ export const getBookingsWithUserInfo = query({
     homeId: v.string(),
   },
   handler: async (ctx, args) => {
-    // Get all bookings for this home
+    function formatDate(dateStr: string) {
+      const monthNames = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      const [, mm, dd] = dateStr.split("-");
+      const monthIndex = parseInt(mm, 10) - 1;
+      return `${monthNames[monthIndex]} ${dd}`;
+    }
+
+    // Efficiently get all bookings for this home, ordered by fromDate
     const bookings = await ctx.db
       .query("bookings")
-      .withIndex("byHomeId", (q) => q.eq("homeId", args.homeId))
+      .withIndex("byHomeId_fromDate", (q) => q.eq("homeId", args.homeId))
+      .order("asc")
       .collect();
 
-    // For each booking, fetch the associated user and combine the data
     const bookingsWithUserInfo = await Promise.all(
       bookings.map(async (booking) => {
         const user = await ctx.db
@@ -106,8 +126,8 @@ export const getBookingsWithUserInfo = query({
           .first();
 
         return {
-          fromDate: booking.fromDate,
-          toDate: booking.toDate,
+          fromDate: formatDate(booking.fromDate),
+          toDate: formatDate(booking.toDate),
           name: user?.username,
           color: user?.color,
         };
@@ -172,13 +192,12 @@ export const getMarkedDatesForHome = query({
 
 export const deleteOldBookings = internalMutation({
   handler: async (ctx) => {
-    // Get today's date in YYYY-MM-DD format (UTC)
     const today = new Date().toISOString().slice(0, 10);
 
-    // Find bookings where toDate < today
+    // Efficiently find bookings where toDate < today using the index
     const oldBookings = await ctx.db
       .query("bookings")
-      .filter((q) => q.lt(q.field("toDate"), today))
+      .withIndex("byToDate", (q) => q.lt("toDate", today))
       .collect();
 
     for (const booking of oldBookings) {

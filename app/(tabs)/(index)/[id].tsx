@@ -1,3 +1,4 @@
+import Loading from "@/components/Loading";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useUser } from "@clerk/clerk-expo";
@@ -188,6 +189,10 @@ export default function HomesScreen() {
     });
   };
 
+  if (bookingsAndUsers === undefined || markedDatesDB === undefined) {
+    return <Loading />;
+  }
+
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
@@ -258,18 +263,21 @@ export default function HomesScreen() {
                     </Text>
 
                     <View className="felx flex-row items-center justify-center gap-5">
-                      <Text className="font-medium text-lg">
-                        {data.fromDate.split("-").slice(1).join("-")}
-                      </Text>
+                      {data.fromDate === data.toDate ? (
+                        <View />
+                      ) : (
+                        <Text className="font-medium text-lg">
+                          {data.fromDate}
+                        </Text>
+                      )}
+
                       <FontAwesome
                         size={30}
                         name="arrow-circle-right"
                         color={data.color}
                         className="shadow"
                       />
-                      <Text className="font-medium text-lg">
-                        {data.toDate.split("-").slice(1).join("-")}
-                      </Text>
+                      <Text className="font-medium text-lg">{data.toDate}</Text>
                     </View>
                   </View>
                 </View>

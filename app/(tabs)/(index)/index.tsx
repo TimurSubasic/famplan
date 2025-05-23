@@ -5,7 +5,7 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import Dialog from "react-native-dialog";
 
@@ -15,8 +15,6 @@ const Index = () => {
   const clerkId = user?.id as string;
 
   const userFull = useQuery(api.users.getUserByClerk, { clerkId });
-
-  const [hasFamily, setHasFamily] = useState(false);
 
   const homes = useQuery(
     api.homes.getHomesByFamilyId,
@@ -93,21 +91,14 @@ const Index = () => {
     }
   };
 
-  useEffect(() => {
-    if (userFull?.familyId) {
-      setHasFamily(true);
-    } else {
-      setHasFamily(false);
-    }
-  }, [userFull]);
-
   const router = useRouter();
 
   if (userFull === undefined) {
     return <Loading />;
   }
 
-  if (hasFamily) {
+  // user in a family
+  if (userFull?.familyId) {
     return (
       <ScrollView
         showsVerticalScrollIndicator={false}
